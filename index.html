@@ -246,6 +246,34 @@
       color: var(--muted); line-height: 1.6; margin-top: 8px;
     }
 
+    /* ── SPINNER ── */
+    .spinner { width: 38px; height: 38px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.75s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── BENCH LADDER ── */
+    .bl-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: var(--surface2); border: 1px solid transparent; margin-bottom: 4px; }
+    .bl-row.bl-you { border-color: var(--green); background: var(--green-dim2); }
+    .bl-lbl { font-size: 12px; font-weight: 500; color: var(--muted); flex: 1; }
+    .bl-row.bl-you .bl-lbl { color: var(--text); font-weight: 700; }
+    .bl-ref { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .bl-you-tag { font-size: 11px; font-weight: 800; color: var(--green); white-space: nowrap; }
+
+    /* ── EXTRA BADGES ── */
+    .badge-usports { background: rgba(129,140,248,0.12); color: #818cf8; }
+    .badge-naia    { background: rgba(52,211,153,0.12);  color: #34d399; }
+    .badge-d3      { background: rgba(251,146,60,0.12);  color: #fb923c; }
+    .badge-njcaa   { background: rgba(249,115,22,0.12);  color: #f97316; }
+
+    /* ── AI PLAN SECTIONS ── */
+    .ai-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .ai-info-box { background: var(--surface2); border-radius: 8px; padding: 12px 14px; }
+    .ai-info-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 4px; }
+    .ai-info-val { font-size: 13px; color: var(--text); line-height: 1.5; }
+    .supl-list { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .supl-row { font-size: 13px; color: var(--text); padding: 4px 0; border-bottom: 1px solid var(--border); }
+    .supl-row:last-child { border-bottom: none; }
+    .rec-item { padding: 4px 0; font-size: 13px; color: var(--text); }
+
     @media (max-width: 560px) {
       .fgrid { grid-template-columns: 1fr; }
       .lcard { padding: 32px 24px; }
@@ -335,11 +363,17 @@
             <option value="soccer">Fútbol</option>
             <option value="basketball">Baloncesto</option>
             <option value="baseball">Béisbol</option>
+            <option value="softball">Sóftbol</option>
             <option value="volleyball">Voleibol</option>
+            <option value="football">Fútbol Americano</option>
             <option value="track">Atletismo</option>
+            <option value="crosscountry">Cross Country</option>
             <option value="swimming">Natación</option>
             <option value="tennis">Tenis</option>
-            <option value="football">Fútbol Americano</option>
+            <option value="lacrosse">Lacrosse</option>
+            <option value="wrestling">Lucha</option>
+            <option value="rowing">Remo</option>
+            <option value="golf">Golf</option>
           </select>
         </div>
         <div class="fg">
@@ -479,16 +513,27 @@ sb.auth.getSession().then(({ data: { session } }) => { if (session) showApp(); }
 
 // ── POSITIONS ──
 const POSITIONS = {
-  soccer:     ['Portero','Defensa Central','Lateral Derecho','Lateral Izquierdo','Mediocampista Defensivo','Mediocampista Box-to-Box','Extremo Derecho','Extremo Izquierdo','Delantero Centro'],
-  basketball: ['Base (PG)','Escolta (SG)','Alero (SF)','Ala-Pívot (PF)','Pívot (C)'],
-  baseball:   ['Pitcher','Cátcher','Primera Base','Segunda Base','Tercera Base','Shortstop','Jardinero Izquierdo','Jardinero Central','Jardinero Derecho','Designado (DH)'],
-  volleyball: ['Líbero','Colocador','Central','Opuesto','Receptor-Atacante'],
-  track:      ['Velocidad (100/200m)','400m','Medio Fondo (800/1500m)','Fondo (3000m+)','Vallas','Lanzamientos','Saltos'],
-  swimming:   ['Libre (Sprint)','Libre (Fondo)','Mariposa','Espalda','Pecho','Combinado Individual'],
-  tennis:     ['Jugador Base (Fondo)','Serve & Volley','All-Court'],
-  football:   ['Quarterback','Running Back','Wide Receiver','Tight End','Liniero Ofensivo','Liniero Defensivo','Linebacker','Cornerback','Safety','Kicker/Punter']
+  soccer:       ['Portero','Defensa Central','Lateral Derecho','Lateral Izquierdo','Mediocampista Defensivo','Mediocampista Box-to-Box','Extremo Derecho','Extremo Izquierdo','Delantero Centro'],
+  basketball:   ['Base (PG)','Escolta (SG)','Alero (SF)','Ala-Pívot (PF)','Pívot (C)'],
+  baseball:     ['Pitcher','Cátcher','Primera Base','Segunda Base','Tercera Base','Shortstop','Jardinero Izquierdo','Jardinero Central','Jardinero Derecho','Designado (DH)'],
+  softball:     ['Pitcher','Cátcher','Primera Base','Segunda Base','Tercera Base','Shortstop','Jardinero Izquierdo','Jardinero Central','Jardinero Derecho'],
+  volleyball:   ['Líbero','Colocador','Central','Opuesto','Receptor-Atacante'],
+  track:        ['Velocidad (100/200m)','400m','Medio Fondo (800/1500m)','Fondo (3000m+)','Vallas','Lanzamientos','Saltos'],
+  crosscountry: ['5K / 6K','8K / 10K'],
+  swimming:     ['Libre (Sprint)','Libre (Fondo)','Mariposa','Espalda','Pecho','Combinado Individual'],
+  tennis:       ['Jugador Base (Fondo)','Serve & Volley','All-Court'],
+  football:     ['Quarterback','Running Back','Wide Receiver','Tight End','Liniero Ofensivo','Liniero Defensivo','Linebacker','Cornerback','Safety','Kicker/Punter'],
+  lacrosse:     ['Atacante','Mediocampista','Defensa','Portero'],
+  wrestling:    ['125 lbs','133 lbs','141 lbs','149 lbs','157 lbs','165 lbs','174 lbs','184 lbs','197 lbs','285 lbs'],
+  rowing:       ['Timonel','Remero (peso ligero)','Remero (peso abierto)'],
+  golf:         ['Jugador completo'],
 };
-const SPORT_NAMES = { soccer:'Fútbol', basketball:'Baloncesto', baseball:'Béisbol', volleyball:'Voleibol', track:'Atletismo', swimming:'Natación', tennis:'Tenis', football:'Fútbol Americano' };
+const SPORT_NAMES = {
+  soccer:'Fútbol', basketball:'Baloncesto', baseball:'Béisbol', softball:'Sóftbol',
+  volleyball:'Voleibol', track:'Atletismo', crosscountry:'Cross Country',
+  swimming:'Natación', tennis:'Tenis', football:'Fútbol Americano',
+  lacrosse:'Lacrosse', wrestling:'Lucha', rowing:'Remo', golf:'Golf'
+};
 
 function updatePositions() {
   const sport = document.getElementById('f-sport').value;
@@ -537,27 +582,62 @@ function nextStep1() {
 }
 
 // ── BENCHMARKS ──
+// bf levels: elite → d1 → usports (U-Sports Canadá) → d2 → naia → d3 → njcaa/mexico
 const BENCH = {
-  soccer:     { male: { bf: {elite:8,  d1:10, d2:13} }, female: { bf: {elite:14, d1:17, d2:20} } },
-  basketball: { male: { bf: {elite:7,  d1:9,  d2:12} }, female: { bf: {elite:14, d1:17, d2:21} } },
-  baseball:   { male: { bf: {elite:10, d1:13, d2:16} }, female: { bf: {elite:16, d1:19, d2:22} } },
-  volleyball: { male: { bf: {elite:9,  d1:12, d2:15} }, female: { bf: {elite:13, d1:16, d2:19} } },
-  track:      { male: { bf: {elite:7,  d1:10, d2:13} }, female: { bf: {elite:12, d1:15, d2:18} } },
-  swimming:   { male: { bf: {elite:8,  d1:11, d2:14} }, female: { bf: {elite:14, d1:17, d2:20} } },
-  tennis:     { male: { bf: {elite:10, d1:13, d2:16} }, female: { bf: {elite:16, d1:19, d2:22} } },
-  football:   { male: { bf: {elite:11, d1:14, d2:17} }, female: { bf: {elite:16, d1:19, d2:22} } }
+  soccer:     { male:   { bf: {elite:8,  d1:10, usports:11, d2:13, naia:14, d3:15, njcaa:17} },
+                female: { bf: {elite:14, d1:17, usports:18, d2:20, naia:21, d3:22, njcaa:24} } },
+  basketball: { male:   { bf: {elite:7,  d1:9,  usports:10, d2:12, naia:13, d3:14, njcaa:16} },
+                female: { bf: {elite:14, d1:17, usports:18, d2:21, naia:22, d3:23, njcaa:25} } },
+  baseball:   { male:   { bf: {elite:10, d1:13, usports:14, d2:16, naia:17, d3:18, njcaa:20} },
+                female: { bf: {elite:16, d1:19, usports:20, d2:22, naia:23, d3:24, njcaa:26} } },
+  volleyball: { male:   { bf: {elite:9,  d1:12, usports:13, d2:15, naia:16, d3:17, njcaa:19} },
+                female: { bf: {elite:13, d1:16, usports:17, d2:19, naia:20, d3:21, njcaa:23} } },
+  track:      { male:   { bf: {elite:7,  d1:10, usports:11, d2:13, naia:14, d3:15, njcaa:17} },
+                female: { bf: {elite:12, d1:15, usports:16, d2:18, naia:19, d3:20, njcaa:22} } },
+  swimming:   { male:   { bf: {elite:8,  d1:11, usports:12, d2:14, naia:15, d3:16, njcaa:18} },
+                female: { bf: {elite:14, d1:17, usports:18, d2:20, naia:21, d3:22, njcaa:24} } },
+  tennis:     { male:   { bf: {elite:10, d1:13, usports:14, d2:16, naia:17, d3:18, njcaa:20} },
+                female: { bf: {elite:16, d1:19, usports:20, d2:22, naia:23, d3:24, njcaa:26} } },
+  football:   { male:   { bf: {elite:11, d1:14, usports:15, d2:17, naia:18, d3:19, njcaa:21} },
+                female: { bf: {elite:16, d1:19, usports:20, d2:22, naia:23, d3:24, njcaa:26} } },
+  softball:   { male:   { bf: {elite:10, d1:13, usports:14, d2:16, naia:17, d3:18, njcaa:20} },
+                female: { bf: {elite:16, d1:19, usports:20, d2:22, naia:23, d3:24, njcaa:26} } },
+  lacrosse:   { male:   { bf: {elite:9,  d1:11, usports:12, d2:14, naia:15, d3:16, njcaa:18} },
+                female: { bf: {elite:15, d1:18, usports:19, d2:21, naia:22, d3:23, njcaa:25} } },
+  wrestling:  { male:   { bf: {elite:6,  d1:8,  usports:9,  d2:11, naia:12, d3:13, njcaa:15} },
+                female: { bf: {elite:12, d1:15, usports:16, d2:18, naia:19, d3:20, njcaa:22} } },
+  rowing:     { male:   { bf: {elite:8,  d1:11, usports:12, d2:14, naia:15, d3:16, njcaa:18} },
+                female: { bf: {elite:14, d1:17, usports:18, d2:20, naia:21, d3:22, njcaa:24} } },
+  golf:       { male:   { bf: {elite:12, d1:15, usports:16, d2:18, naia:19, d3:20, njcaa:22} },
+                female: { bf: {elite:18, d1:21, usports:22, d2:24, naia:25, d3:26, njcaa:28} } },
+  crosscountry:{ male:  { bf: {elite:6,  d1:9,  usports:10, d2:12, naia:13, d3:14, njcaa:16} },
+                female: { bf: {elite:11, d1:14, usports:15, d2:17, naia:18, d3:19, njcaa:21} } }
 };
 
 function bfRating(val, b) {
-  if (val <= b.elite) return 'elite';
-  if (val <= b.d1)    return 'd1';
-  if (val <= b.d2)    return 'd2';
+  if (val <= b.elite)   return 'elite';
+  if (val <= b.d1)      return 'd1';
+  if (val <= b.usports) return 'usports';
+  if (val <= b.d2)      return 'd2';
+  if (val <= b.naia)    return 'naia';
+  if (val <= b.d3)      return 'd3';
+  if (val <= b.njcaa)   return 'njcaa';
   return 'below';
 }
 
+const RATING_CFG = {
+  elite:   { cls:'badge-elite',   label:'Nivel Élite / Profesional' },
+  d1:      { cls:'badge-d1',      label:'NCAA División I' },
+  usports: { cls:'badge-usports', label:'U-Sports (Canadá)' },
+  d2:      { cls:'badge-d2',      label:'NCAA División II' },
+  naia:    { cls:'badge-naia',    label:'NAIA' },
+  d3:      { cls:'badge-d3',      label:'NCAA División III' },
+  njcaa:   { cls:'badge-njcaa',   label:'NJCAA / México (CONDDE)' },
+  below:   { cls:'badge-below',   label:'Por Mejorar' },
+};
 function ratingBadge(r) {
-  const map = { elite: ['badge-elite','Nivel Élite ✓'], d1: ['badge-d1','Nivel NCAA D1'], d2: ['badge-d2','Nivel NCAA D2'], below: ['badge-below','Por Mejorar'] };
-  return `<span class="badge ${map[r][0]}">${map[r][1]}</span>`;
+  const c = RATING_CFG[r] || RATING_CFG.below;
+  return `<span class="badge ${c.cls}">${c.label}</span>`;
 }
 
 function barHTML(pct, e, d1, d2) {
@@ -581,19 +661,34 @@ function renderBenchmarks() {
   const bmi = +(weight / Math.pow(height / 100, 2)).toFixed(1);
   const leanKg = +(Math.max(0, weight * (1 - bf / 100))).toFixed(1);
   const fatKg = +(Math.min(weight, weight * bf / 100)).toFixed(1);
+  const bfR = bfRating(bf, bData.bf);
 
-  const BF_MAX = 35;
-  const bfPct  = (bf / BF_MAX) * 100;
-  const ePct   = (bData.bf.elite / BF_MAX) * 100;
-  const d1Pct  = (bData.bf.d1 / BF_MAX) * 100;
-  const d2Pct  = (bData.bf.d2 / BF_MAX) * 100;
-  const bfR    = bfRating(bf, bData.bf);
+  const LEVELS = [
+    { key:'elite',   label:'Élite / Profesional',       ref: bData.bf.elite },
+    { key:'d1',      label:'NCAA División I',            ref: bData.bf.d1 },
+    { key:'usports', label:'U-Sports (Canadá / CIS)',    ref: bData.bf.usports },
+    { key:'d2',      label:'NCAA División II',           ref: bData.bf.d2 },
+    { key:'naia',    label:'NAIA',                       ref: bData.bf.naia },
+    { key:'d3',      label:'NCAA División III',          ref: bData.bf.d3 },
+    { key:'njcaa',   label:'NJCAA / México (CONDDE)',    ref: bData.bf.njcaa },
+  ];
 
-  // BMI — use range mid
+  const ladder = LEVELS.map(lv => {
+    const isYou = bfR === lv.key;
+    return `<div class="bl-row${isYou ? ' bl-you' : ''}">
+      <span class="bl-lbl">${lv.label}</span>
+      <span class="bl-ref">≤${lv.ref}%</span>
+      ${isYou ? `<span class="bl-you-tag">← ${bf}%</span>` : ''}
+    </div>`;
+  }).join('');
+
+  const belowAll = bfR === 'below';
+
+  // BMI bar (simpler — 3 levels)
   const bmiTgt = gender === 'male' ? {elite:22.5,d1:23.5,d2:24.5} : {elite:21.0,d1:22.0,d2:23.5};
   const BMI_MAX = 32;
   const bmiPct = (bmi / BMI_MAX) * 100;
-  const bmiDiff = (v) => Math.abs(bmi - v);
+  const bmiDiff = v => Math.abs(bmi - v);
   const bmiR = bmiDiff(bmiTgt.elite) <= 1.5 ? 'elite' : bmiDiff(bmiTgt.d1) <= 1.5 ? 'd1' : bmiDiff(bmiTgt.d2) <= 1.5 ? 'd2' : 'below';
 
   document.getElementById('bench-content').innerHTML = `
@@ -602,12 +697,15 @@ function renderBenchmarks() {
 
       <div class="bstat">
         <div class="bstat-row">
-          <span class="bstat-name">% Grasa Corporal</span>
+          <span class="bstat-name">% Grasa Corporal — Comparativa por nivel</span>
           <span class="bstat-you">${bf}%</span>
         </div>
-        ${barHTML(bfPct, ePct.toFixed(1), d1Pct.toFixed(1), d2Pct.toFixed(1))}
-        <div style="margin-top:6px;font-size:11px;color:var(--muted)">
-          Referencia: Élite ≤${bData.bf.elite}% · NCAA D1 ≤${bData.bf.d1}% · NCAA D2 ≤${bData.bf.d2}%
+        <div style="margin:10px 0 8px">
+          ${ladder}
+          ${belowAll ? `<div class="bl-row" style="border-color:var(--red);background:rgba(255,79,79,0.08)">
+            <span class="bl-lbl" style="color:var(--red)">Por Mejorar</span>
+            <span class="bl-you-tag" style="color:var(--red)">← ${bf}%</span>
+          </div>` : ''}
         </div>
         ${ratingBadge(bfR)}
       </div>
@@ -619,29 +717,20 @@ function renderBenchmarks() {
         </div>
         ${barHTML(bmiPct, ((bmiTgt.elite/BMI_MAX)*100).toFixed(1), ((bmiTgt.d1/BMI_MAX)*100).toFixed(1), ((bmiTgt.d2/BMI_MAX)*100).toFixed(1))}
         <div style="margin-top:6px;font-size:11px;color:var(--muted)">
-          Rango ideal para tu deporte: ${bmiTgt.elite - 1.5}–${bmiTgt.d2 + 1.5} (varía por posición)
+          Rango ideal: ${bmiTgt.elite - 1.5}–${bmiTgt.d2 + 1.5} (varía por posición)
         </div>
         ${ratingBadge(bmiR)}
       </div>
 
       <div class="stats-row">
-        <div class="stat-box">
-          <div class="stat-val">${weight} kg</div>
-          <div class="stat-lbl">Peso total</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-val green">${leanKg} kg</div>
-          <div class="stat-lbl">Masa magra</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-val">${fatKg} kg</div>
-          <div class="stat-lbl">Masa grasa</div>
-        </div>
+        <div class="stat-box"><div class="stat-val">${weight} kg</div><div class="stat-lbl">Peso total</div></div>
+        <div class="stat-box"><div class="stat-val green">${leanKg} kg</div><div class="stat-lbl">Masa magra</div></div>
+        <div class="stat-box"><div class="stat-val">${fatKg} kg</div><div class="stat-lbl">Masa grasa</div></div>
       </div>
     </div>
     <div class="plan-note">
-      <strong style="color:var(--text)">Nota:</strong> Los benchmarks son promedios documentados de atletas universitarios y de élite.
-      La composición ideal varía por posición específica, fase de temporada y genética individual.
+      <strong style="color:var(--text)">Nota:</strong> Benchmarks basados en promedios documentados NCAA, NAIA, NJCAA, U-Sports (Canadá) y CONDDE (México).
+      Los valores varían por posición, fase de temporada y genética individual.
     </div>`;
 }
 
@@ -658,81 +747,186 @@ function toStep3() { MAX = Math.max(MAX, 3); goToStep(3); }
 function nextStep3() {
   if (!ANS.gym || !ANS.goal || !ANS.days || !ANS.diet) { show('s3-err'); return; }
   hide('s3-err');
-  generatePlan();
   MAX = 4;
+  // Show loading immediately before switching step
+  document.getElementById('plan-title').textContent = 'Generando tu plan...';
+  document.getElementById('plan-content').innerHTML = `
+    <div style="text-align:center;padding:70px 20px">
+      <div class="spinner"></div>
+      <div style="color:var(--muted);font-size:14px;margin-top:20px;line-height:1.7">
+        Claude está analizando tu perfil<br>y creando tu plan personalizado...
+      </div>
+    </div>`;
   goToStep(4);
+  generatePlan();
 }
 
-// ── PLAN GENERATION ──
-function generatePlan() {
-  const { name, age, gender, weight, height } = PROFILE;
+// ── PLAN GENERATION (AI) ──
+async function generatePlan() {
+  const { name, age, gender, weight, height, bodyFat } = PROFILE;
   const { gym, goal, days, diet } = ANS;
   const d = parseInt(days);
 
-  // BMR — Mifflin-St Jeor
+  // Pre-calculate nutrition targets to send to Claude as context
   const bmr = gender === 'male'
     ? 10 * weight + 6.25 * height - 5 * age + 5
     : 10 * weight + 6.25 * height - 5 * age - 161;
-
   const actFactor = d >= 6 ? 1.725 : d >= 5 ? 1.65 : d >= 4 ? 1.6 : 1.55;
   const tdee = Math.round(bmr * actFactor);
-  const calAdj = { performance: 200, muscle: 350, fat: -300, maintain: 0 };
-  const cal = tdee + calAdj[goal];
+  const calAdj = { performance:200, muscle:350, fat:-300, maintain:0 };
+  const targetCal = tdee + calAdj[goal];
 
-  const protG = { muscle: 2.0, fat: 1.8, performance: 1.9, maintain: 1.6 };
-  const protein = Math.round(weight * protG[goal]);
-  const fatG    = Math.round(cal * 0.28 / 9);
-  const carbs   = Math.round((cal - protein * 4 - fatG * 9) / 4);
+  const bfRating = document.querySelector('#bench-content .badge')?.textContent?.trim() || '';
 
-  const goalLabels = { performance:'Rendimiento Deportivo', muscle:'Ganancia Muscular', fat:'Pérdida de Grasa', maintain:'Mantenimiento' };
-  const gymLabels  = { yes:'Gimnasio completo con pesas', partial:'Equipamiento básico', no:'Sin equipamiento (calistenia)' };
+  try {
+    const res = await fetch('/api/generate-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: PROFILE,
+        answers: ANS,
+        targetCal,
+        benchmarkRating: bfRating
+      })
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
+    const { plan } = await res.json();
+    renderAIPlan(plan);
+  } catch (e) {
+    console.warn('AI plan fallback:', e);
+    renderTemplatePlan();
+  }
+}
 
+function renderAIPlan(plan) {
+  const { name } = PROFILE;
   document.getElementById('plan-title').textContent = `Plan de ${name}`;
 
+  const meals = (plan.nutricion?.comidas || []).map(m => `
+    <div class="mrow">
+      <div class="mtime">${m.hora}</div>
+      <div class="mfood"><strong style="color:var(--text)">${m.nombre}</strong><br>${m.descripcion}</div>
+      <div class="mmacros">${m.macros}</div>
+    </div>`).join('');
+
+  const trainDays = (plan.entrenamiento?.dias || []).map(d => `
+    <div class="tday">
+      <div class="tday-lbl">${d.dia}</div>
+      <div class="tday-focus">${d.tipo}</div>
+      <div class="tday-ex">${(d.ejercicios || []).join(' · ')}</div>
+    </div>`).join('');
+
+  const supls = (plan.nutricion?.suplementos || []).length ? `
+    <div class="supl-list">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px">Suplementos recomendados</div>
+      ${plan.nutricion.suplementos.map(s => `<div class="supl-row">${s}</div>`).join('')}
+    </div>` : '';
+
+  const recs = (plan.recuperacion?.tecnicas || []).map(t => `<div class="rec-item">• ${t}</div>`).join('');
+
+  const cal = plan.nutricion?.calorias || 0;
+  const prot = plan.nutricion?.proteinas_g || 0;
+  const carbs = plan.nutricion?.carbos_g || 0;
+  const fatG = plan.nutricion?.grasas_g || 0;
+
   document.getElementById('plan-content').innerHTML = `
+    <div class="psection" style="border-color:rgba(170,255,0,0.25);background:var(--green-dim)">
+      <div style="font-size:14px;line-height:1.75;color:var(--text)">${plan.resumen || ''}</div>
+    </div>
+
+    ${plan.fase_temporada ? `
+    <div class="psection">
+      <div class="psec-title">📅 ${plan.fase_temporada.titulo}</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px">${plan.fase_temporada.descripcion}</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px">
+        <strong style="color:var(--green)">Enfoque:</strong> ${plan.fase_temporada.enfoque}
+      </div>
+    </div>` : ''}
+
     <div class="psection">
       <div class="psec-title">🥗 Plan Nutricional</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">
-        Objetivo: <strong style="color:var(--text)">${goalLabels[goal]}</strong> &nbsp;·&nbsp; ${d} días de entrenamiento/semana
-      </div>
-
       <div class="cal-hero">
         <div class="cal-num">${cal.toLocaleString()}</div>
-        <div class="cal-lbl">Calorías diarias recomendadas</div>
+        <div class="cal-lbl">Calorías diarias</div>
       </div>
-
       <div class="macros-row">
-        <div class="mcard">
-          <div class="mcard-val">${protein}g</div>
-          <div class="mcard-pct">${Math.round(protein*4/cal*100)}% de las calorías</div>
-          <div class="mcard-lbl">Proteínas</div>
-        </div>
-        <div class="mcard">
-          <div class="mcard-val">${carbs}g</div>
-          <div class="mcard-pct">${Math.round(carbs*4/cal*100)}% de las calorías</div>
-          <div class="mcard-lbl">Carbohidratos</div>
-        </div>
-        <div class="mcard">
-          <div class="mcard-val">${fatG}g</div>
-          <div class="mcard-pct">${Math.round(fatG*9/cal*100)}% de las calorías</div>
-          <div class="mcard-lbl">Grasas</div>
-        </div>
+        <div class="mcard"><div class="mcard-val">${prot}g</div><div class="mcard-pct">${cal ? Math.round(prot*4/cal*100) : 0}% cal</div><div class="mcard-lbl">Proteínas</div></div>
+        <div class="mcard"><div class="mcard-val">${carbs}g</div><div class="mcard-pct">${cal ? Math.round(carbs*4/cal*100) : 0}% cal</div><div class="mcard-lbl">Carbohidratos</div></div>
+        <div class="mcard"><div class="mcard-val">${fatG}g</div><div class="mcard-pct">${cal ? Math.round(fatG*9/cal*100) : 0}% cal</div><div class="mcard-lbl">Grasas</div></div>
       </div>
-
-      <div class="meals-lbl">Ejemplo de día alimenticio</div>
-      ${buildMeals(diet, goal)}
+      ${plan.nutricion?.hidratacion || plan.nutricion?.timing_nutricional ? `
+      <div class="ai-info-grid">
+        ${plan.nutricion.hidratacion ? `<div class="ai-info-box"><div class="ai-info-lbl">Hidratación</div><div class="ai-info-val">${plan.nutricion.hidratacion}</div></div>` : ''}
+        ${plan.nutricion.timing_nutricional ? `<div class="ai-info-box"><div class="ai-info-lbl">Timing</div><div class="ai-info-val">${plan.nutricion.timing_nutricional}</div></div>` : ''}
+      </div>` : ''}
+      <div class="meals-lbl">Plan de comidas del día</div>
+      ${meals}
+      ${supls}
     </div>
 
     <div class="psection">
       <div class="psec-title">💪 Plan de Entrenamiento</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${gymLabels[gym]} &nbsp;·&nbsp; ${d} días/semana</div>
-      ${buildTraining(gym, goal, d)}
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${plan.entrenamiento?.descripcion_general || ''}</div>
+      ${trainDays}
     </div>
 
+    ${plan.recuperacion ? `
+    <div class="psection">
+      <div class="psec-title">🔄 Recuperación</div>
+      <div class="ai-info-grid" style="margin-bottom:0">
+        ${plan.recuperacion.sueno ? `<div class="ai-info-box"><div class="ai-info-lbl">Sueño</div><div class="ai-info-val">${plan.recuperacion.sueno}</div></div>` : ''}
+        ${plan.recuperacion.dias_descanso ? `<div class="ai-info-box"><div class="ai-info-lbl">Días de descanso</div><div class="ai-info-val">${plan.recuperacion.dias_descanso}</div></div>` : ''}
+      </div>
+      ${recs ? `<div style="margin-top:10px">${recs}</div>` : ''}
+    </div>` : ''}
+
+    ${plan.consejo_mental ? `
+    <div class="psection" style="border-color:rgba(170,255,0,0.2)">
+      <div class="psec-title">🧠 Rendimiento Mental</div>
+      <div style="font-size:14px;color:var(--text);line-height:1.75;font-style:italic">"${plan.consejo_mental}"</div>
+    </div>` : ''}
+
     <div class="plan-note">
-      Este plan es una guía personalizada basada en tus datos. Para ajustes específicos,
-      consulta con tu nutricionista y preparador físico asignado en NVS.
+      Plan generado por IA · NVS Athlete Performance · Para ajustes específicos consulta con tu preparador físico y nutricionista asignado en NVS.
     </div>`;
+}
+
+// ── TEMPLATE FALLBACK ──
+function renderTemplatePlan() {
+  const { name, age, gender, weight, height } = PROFILE;
+  const { gym, goal, days, diet } = ANS;
+  const d = parseInt(days);
+  const bmr = gender === 'male' ? 10*weight+6.25*height-5*age+5 : 10*weight+6.25*height-5*age-161;
+  const actFactor = d>=6?1.725:d>=5?1.65:d>=4?1.6:1.55;
+  const tdee = Math.round(bmr * actFactor);
+  const calAdj = {performance:200,muscle:350,fat:-300,maintain:0};
+  const cal = tdee + calAdj[goal];
+  const protG = {muscle:2.0,fat:1.8,performance:1.9,maintain:1.6};
+  const protein = Math.round(weight * protG[goal]);
+  const fatG = Math.round(cal * 0.28 / 9);
+  const carbs = Math.round((cal - protein*4 - fatG*9) / 4);
+  const goalLabels = {performance:'Rendimiento Deportivo',muscle:'Ganancia Muscular',fat:'Pérdida de Grasa',maintain:'Mantenimiento'};
+  const gymLabels = {yes:'Gimnasio completo',partial:'Equipamiento básico',no:'Sin equipamiento'};
+  document.getElementById('plan-title').textContent = `Plan de ${name}`;
+  document.getElementById('plan-content').innerHTML = `
+    <div class="psection">
+      <div class="psec-title">🥗 Plan Nutricional</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Objetivo: <strong style="color:var(--text)">${goalLabels[goal]}</strong> · ${d} días/semana</div>
+      <div class="cal-hero"><div class="cal-num">${cal.toLocaleString()}</div><div class="cal-lbl">Calorías diarias</div></div>
+      <div class="macros-row">
+        <div class="mcard"><div class="mcard-val">${protein}g</div><div class="mcard-pct">${Math.round(protein*4/cal*100)}% cal</div><div class="mcard-lbl">Proteínas</div></div>
+        <div class="mcard"><div class="mcard-val">${carbs}g</div><div class="mcard-pct">${Math.round(carbs*4/cal*100)}% cal</div><div class="mcard-lbl">Carbohidratos</div></div>
+        <div class="mcard"><div class="mcard-val">${fatG}g</div><div class="mcard-pct">${Math.round(fatG*9/cal*100)}% cal</div><div class="mcard-lbl">Grasas</div></div>
+      </div>
+      <div class="meals-lbl">Ejemplo de día</div>
+      ${buildMeals(diet, goal)}
+    </div>
+    <div class="psection">
+      <div class="psec-title">💪 Plan de Entrenamiento</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${gymLabels[gym]} · ${d} días/semana</div>
+      ${buildTraining(gym, goal, d)}
+    </div>
+    <div class="plan-note">Plan base NVS · Para ajustes consulta con tu preparador físico en NVS.</div>`;
 }
 
 function buildMeals(diet, goal) {
