@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NVS Athlete Performance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Anton&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #07080c;
+      --surface: #10121a;
+      --surface2: #181c28;
+      --border: #252a3a;
+      --text: #e8eaf2;
+      --muted: #6b7280;
+      --green: #AAFF00;
+      --green-dk: #88cc00;
+      --green-dim: rgba(170,255,0,0.08);
+      --green-dim2: rgba(170,255,0,0.15);
+      --blue: #4a9eff;
+      --red: #ff4f4f;
+      --orange: #f59e0b;
+      --r: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── LOGIN ── */
+    #screen-login {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(170,255,0,0.07) 0%, transparent 70%), var(--bg);
+    }
+    .lcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 48px 40px;
+      width: 100%; max-width: 400px; text-align: center;
+    }
+    .llogo { font-family: 'Anton', sans-serif; font-size: 36px; color: var(--green); letter-spacing: 3px; }
+    .lsub { color: var(--muted); font-size: 13px; margin-top: 4px; margin-bottom: 36px; letter-spacing: 0.3px; }
+    .lfield { margin-bottom: 14px; text-align: left; }
+    .lfield label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    .lfield input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 14px; color: var(--text);
+      font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s;
+    }
+    .lfield input:focus { border-color: var(--green); }
+    .btn-login {
+      width: 100%; background: var(--green); color: #0a0f00; border: none;
+      border-radius: 8px; padding: 13px; font-size: 15px; font-weight: 800;
+      font-family: 'Inter', sans-serif; cursor: pointer; margin-top: 8px;
+      letter-spacing: 0.3px; transition: opacity 0.2s;
+    }
+    .btn-login:hover { opacity: 0.88; }
+    .btn-login:disabled { opacity: 0.6; cursor: default; }
+    #l-err { color: var(--red); font-size: 13px; margin-top: 12px; min-height: 18px; }
+
+    /* ── APP ── */
+    #screen-app { display: none; min-height: 100vh; }
+
+    .app-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .app-logo { font-family: 'Anton', sans-serif; font-size: 20px; color: var(--green); letter-spacing: 1px; }
+    .app-logo span { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; color: var(--muted); margin-left: 10px; letter-spacing: 0; }
+    .btn-out {
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+    }
+    .btn-out:hover { border-color: var(--muted); color: var(--text); }
+
+    /* ── PROGRESS BAR ── */
+    .prog-wrap {
+      background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px;
+    }
+    .prog-steps {
+      display: flex; max-width: 680px; margin: 0 auto;
+    }
+    .pstep {
+      flex: 1; padding: 13px 0; text-align: center;
+      font-size: 12px; font-weight: 600; color: var(--muted);
+      border-bottom: 2px solid transparent; transition: all 0.2s;
+      cursor: default; user-select: none; white-space: nowrap;
+    }
+    .pstep.clickable { cursor: pointer; }
+    .pstep.clickable:hover { color: var(--text); }
+    .pstep.active { color: var(--green); border-bottom-color: var(--green); }
+    .pstep.done { color: var(--text); border-bottom-color: var(--border); }
+    .pnum {
+      display: inline-flex; width: 20px; height: 20px; border-radius: 50%;
+      background: var(--border); align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; margin-right: 6px;
+    }
+    .pstep.active .pnum { background: var(--green); color: #0a0f00; }
+    .pstep.done .pnum { background: var(--green-dk); color: #0a0f00; }
+
+    /* ── CONTENT ── */
+    .content { max-width: 680px; margin: 0 auto; padding: 32px 24px 80px; }
+
+    .step { display: none; }
+    .step.active { display: block; }
+    .step-h { font-family: 'Anton', sans-serif; font-size: 30px; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .step-sub { color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 28px; }
+
+    /* ── FORM ── */
+    .fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .fg { display: flex; flex-direction: column; }
+    .fg.full { grid-column: 1 / -1; }
+    .fg label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 6px; }
+    .fg input, .fg select {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 11px 14px; color: var(--text);
+      font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .fg input:focus, .fg select:focus { border-color: var(--green); }
+    .fg select option { background: var(--surface2); }
+    .fg input::placeholder { color: var(--muted); }
+
+    .hint { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+    /* ── BUTTONS ── */
+    .btn-p {
+      background: var(--green); color: #0a0f00; border: none;
+      border-radius: 8px; padding: 12px 28px; font-size: 14px; font-weight: 800;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.2px;
+    }
+    .btn-p:hover { opacity: 0.88; }
+    .btn-s {
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 22px; font-size: 14px; font-weight: 600;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: border-color 0.15s;
+    }
+    .btn-s:hover { border-color: var(--muted); }
+    .step-nav { display: flex; gap: 12px; margin-top: 28px; align-items: center; }
+
+    .alert { background: rgba(255,79,79,0.08); border: 1px solid rgba(255,79,79,0.3); border-radius: 8px; padding: 10px 14px; color: var(--red); font-size: 13px; margin-top: 14px; display: none; }
+
+    /* ── BENCHMARKS ── */
+    .bcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 24px; margin-bottom: 16px;
+    }
+    .bcard-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 20px; }
+    .bstat { margin-bottom: 24px; }
+    .bstat:last-of-type { margin-bottom: 0; }
+    .bstat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .bstat-name { font-size: 14px; font-weight: 600; color: var(--text); }
+    .bstat-you { font-size: 18px; font-weight: 800; color: var(--green); }
+    .bar-track {
+      position: relative; height: 6px; background: var(--surface2);
+      border-radius: 3px; overflow: visible; margin-bottom: 10px;
+    }
+    .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, rgba(74,158,255,0.3), #4a9eff); }
+    .bar-dot {
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--green); border: 2px solid var(--bg); z-index: 2;
+    }
+    .bar-labels { position: relative; height: 28px; }
+    .bar-lbl {
+      position: absolute; transform: translateX(-50%);
+      font-size: 10px; color: var(--muted); text-align: center; line-height: 1.3;
+    }
+    .bar-lbl::before { content: ''; display: block; width: 1px; height: 6px; background: var(--border); margin: 0 auto 2px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.4px; margin-top: 4px;
+    }
+    .badge-elite { background: var(--green-dim2); color: var(--green); }
+    .badge-d1 { background: rgba(74,158,255,0.12); color: var(--blue); }
+    .badge-d2 { background: rgba(245,158,11,0.12); color: var(--orange); }
+    .badge-below { background: rgba(255,79,79,0.1); color: var(--red); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding-top: 16px; border-top: 1px solid var(--border); margin-top: 4px; }
+    .stat-box { background: var(--surface2); border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-val { font-family: 'Anton', sans-serif; font-size: 24px; color: var(--text); }
+    .stat-val.green { color: var(--green); }
+    .stat-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-top: 3px; }
+
+    /* ── QUESTIONS ── */
+    .qcard {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 20px; margin-bottom: 14px;
+    }
+    .qlabel { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
+    .qopts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .qopt {
+      padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+      color: var(--text); transition: all 0.15s; user-select: none;
+    }
+    .qopt:hover { border-color: var(--green); }
+    .qopt.sel { background: var(--green-dim2); border-color: var(--green); color: var(--green); font-weight: 700; }
+
+    /* ── PLAN ── */
+    .psection {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 24px; margin-bottom: 16px;
+    }
+    .psec-title {
+      font-family: 'Anton', sans-serif; font-size: 22px; color: var(--green);
+      letter-spacing: 0.5px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .cal-hero {
+      text-align: center; background: var(--green-dim); border: 1px solid rgba(170,255,0,0.25);
+      border-radius: 10px; padding: 20px; margin-bottom: 16px;
+    }
+    .cal-num { font-family: 'Anton', sans-serif; font-size: 52px; color: var(--green); line-height: 1; }
+    .cal-lbl { color: var(--muted); font-size: 12px; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .macros-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .mcard { background: var(--surface2); border-radius: 10px; padding: 14px; text-align: center; }
+    .mcard-val { font-family: 'Anton', sans-serif; font-size: 28px; color: var(--green); }
+    .mcard-pct { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .mcard-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-top: 4px; }
+    .meals-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 10px; }
+    .mrow { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .mrow:last-child { border-bottom: none; }
+    .mtime { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); width: 70px; flex-shrink: 0; padding-top: 2px; }
+    .mfood { font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+    .mmacros { font-size: 11px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
+    .tday { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .tday:last-child { border-bottom: none; }
+    .tday-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--green); margin-bottom: 4px; }
+    .tday-focus { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .tday-ex { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .rest-day .tday-focus { color: var(--muted); }
+
+    .btn-pdf {
+      background: transparent; color: var(--green); border: 1px solid var(--green);
+      border-radius: 8px; padding: 12px 24px; font-size: 14px; font-weight: 700;
+      font-family: 'Inter', sans-serif; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-pdf:hover { background: var(--green-dim); }
+
+    .plan-note {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px 16px; font-size: 12px;
+      color: var(--muted); line-height: 1.6; margin-top: 8px;
+    }
+
+    @media (max-width: 560px) {
+      .fgrid { grid-template-columns: 1fr; }
+      .lcard { padding: 32px 24px; }
+      .content { padding: 20px 16px 60px; }
+      .stats-row { grid-template-columns: repeat(3,1fr); gap: 8px; }
+      .macros-row { gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login">
+  <div class="lcard">
+    <div class="llogo">NVS</div>
+    <div class="lsub">Athlete Performance Platform</div>
+    <div class="lfield">
+      <label>Correo</label>
+      <input type="email" id="l-email" placeholder="tu@correo.com" autocomplete="email">
+    </div>
+    <div class="lfield">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="login()">Ingresar</button>
+    <div id="l-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="screen-app">
+  <div class="app-bar">
+    <div class="app-logo">NVS <span>Athlete Performance</span></div>
+    <button class="btn-out" onclick="logout()">Salir</button>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-steps">
+      <div class="pstep active" id="ps1" onclick="tryGoStep(1)"><span class="pnum">1</span>Perfil</div>
+      <div class="pstep" id="ps2" onclick="tryGoStep(2)"><span class="pnum">2</span>Benchmarks</div>
+      <div class="pstep" id="ps3" onclick="tryGoStep(3)"><span class="pnum">3</span>Objetivos</div>
+      <div class="pstep" id="ps4" onclick="tryGoStep(4)"><span class="pnum">4</span>Tu Plan</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- STEP 1 -->
+    <div class="step active" id="step-1">
+      <div class="step-h">Tu Perfil</div>
+      <div class="step-sub">Ingresa tus datos físicos y deportivos para generar tu análisis personalizado.</div>
+
+      <div class="fgrid">
+        <div class="fg full">
+          <label>Nombre completo</label>
+          <input type="text" id="f-name" placeholder="Ej: Carlos Rodríguez">
+        </div>
+        <div class="fg">
+          <label>Edad</label>
+          <input type="number" id="f-age" placeholder="19" min="14" max="30">
+        </div>
+        <div class="fg">
+          <label>Género</label>
+          <select id="f-gender">
+            <option value="">Seleccionar</option>
+            <option value="male">Masculino</option>
+            <option value="female">Femenino</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Peso (kg)</label>
+          <input type="number" id="f-weight" placeholder="75" step="0.1" min="40" max="200">
+        </div>
+        <div class="fg">
+          <label>Altura (cm)</label>
+          <input type="number" id="f-height" placeholder="175" min="140" max="220">
+        </div>
+        <div class="fg">
+          <label>% Grasa corporal</label>
+          <input type="number" id="f-bf" placeholder="15" step="0.1" min="3" max="50">
+          <span class="hint">Si no lo sabes exactamente, usa una estimación.</span>
+        </div>
+        <div class="fg">
+          <label>Deporte</label>
+          <select id="f-sport" onchange="updatePositions()">
+            <option value="">Seleccionar</option>
+            <option value="soccer">Fútbol</option>
+            <option value="basketball">Baloncesto</option>
+            <option value="baseball">Béisbol</option>
+            <option value="volleyball">Voleibol</option>
+            <option value="track">Atletismo</option>
+            <option value="swimming">Natación</option>
+            <option value="tennis">Tenis</option>
+            <option value="football">Fútbol Americano</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Posición</label>
+          <select id="f-position">
+            <option value="">Seleccionar deporte primero</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="alert" id="s1-err">Por favor completa todos los campos.</div>
+
+      <div class="step-nav">
+        <button class="btn-p" onclick="nextStep1()">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step" id="step-2">
+      <div class="step-h">Comparativa NCAA</div>
+      <div class="step-sub">Así te ubicas vs. los estándares universitarios y de élite en tu deporte.</div>
+      <div id="bench-content"></div>
+      <div class="step-nav">
+        <button class="btn-s" onclick="tryGoStep(1)">← Atrás</button>
+        <button class="btn-p" onclick="tryGoStep(3)">Continuar →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step" id="step-3">
+      <div class="step-h">Objetivos</div>
+      <div class="step-sub">Cuatro preguntas para personalizar tu plan nutricional y de entrenamiento.</div>
+
+      <div class="qcard">
+        <div class="qlabel">1. ¿Tienes acceso a un gimnasio?</div>
+        <div class="qopts" id="q-gym">
+          <div class="qopt" data-val="yes" onclick="selOpt('gym',this)">Sí, con pesas completo</div>
+          <div class="qopt" data-val="partial" onclick="selOpt('gym',this)">Solo equipos básicos</div>
+          <div class="qopt" data-val="no" onclick="selOpt('gym',this)">No, solo en casa</div>
+        </div>
+      </div>
+
+      <div class="qcard">
+        <div class="qlabel">2. ¿Cuál es tu objetivo principal?</div>
+        <div class="qopts" id="q-goal">
+          <div class="qopt" data-val="performance" onclick="selOpt('goal',this)">Rendimiento deportivo</div>
+          <div class="qopt" data-val="muscle" onclick="selOpt('goal',this)">Ganar músculo</div>
+          <div class="qopt" data-val="fat" onclick="selOpt('goal',this)">Bajar grasa</div>
+          <div class="qopt" data-val="maintain" onclick="selOpt('goal',this)">Mantener composición</div>
+        </div>
+      </div>
+
+      <div class="qcard">
+        <div class="qlabel">3. ¿Cuántos días por semana puedes entrenar?</div>
+        <div class="qopts" id="q-days">
+          <div class="qopt" data-val="3" onclick="selOpt('days',this)">3 días</div>
+          <div class="qopt" data-val="4" onclick="selOpt('days',this)">4 días</div>
+          <div class="qopt" data-val="5" onclick="selOpt('days',this)">5 días</div>
+          <div class="qopt" data-val="6" onclick="selOpt('days',this)">6 días</div>
+        </div>
+      </div>
+
+      <div class="qcard">
+        <div class="qlabel">4. ¿Tienes restricciones alimenticias?</div>
+        <div class="qopts" id="q-diet">
+          <div class="qopt" data-val="none" onclick="selOpt('diet',this)">Ninguna</div>
+          <div class="qopt" data-val="veg" onclick="selOpt('diet',this)">Vegetariano</div>
+          <div class="qopt" data-val="vegan" onclick="selOpt('diet',this)">Vegano</div>
+          <div class="qopt" data-val="gluten" onclick="selOpt('diet',this)">Sin gluten</div>
+        </div>
+      </div>
+
+      <div class="alert" id="s3-err">Por favor responde todas las preguntas.</div>
+
+      <div class="step-nav">
+        <button class="btn-s" onclick="tryGoStep(2)">← Atrás</button>
+        <button class="btn-p" onclick="nextStep3()">Generar mi plan →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step" id="step-4">
+      <div class="step-h" id="plan-title">Tu Plan Personalizado</div>
+      <div class="step-sub">Basado en tu perfil, comparativa NCAA y objetivos. Descárgalo en PDF para tenerlo siempre a mano.</div>
+      <div id="plan-content"></div>
+      <div class="step-nav">
+        <button class="btn-s" onclick="tryGoStep(3)">← Ajustar objetivos</button>
+        <button class="btn-pdf" onclick="downloadPDF()">⬇ Descargar PDF</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://mwefvjvvitsondqghgsx.supabase.co';
+const SUPA_KEY = 'sb_publishable_GuFFI-viJquULQCSY_Bd6Q_WoLf0cZk';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let PROFILE = {}, ANS = { gym:'', goal:'', days:'', diet:'' };
+let CUR = 1, MAX = 1;
+
+// ── AUTH ──
+async function login() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  const errEl = document.getElementById('l-err');
+  const btn   = document.getElementById('btn-login');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Completa todos los campos.'; return; }
+  btn.textContent = 'Ingresando…'; btn.disabled = true;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.textContent = 'Ingresar'; btn.disabled = false;
+  if (error) { errEl.textContent = 'Correo o contraseña incorrectos.'; return; }
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('screen-app').style.display = 'block';
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  document.getElementById('screen-app').style.display = 'none';
+  document.getElementById('screen-login').style.display = 'flex';
+  PROFILE = {}; ANS = { gym:'', goal:'', days:'', diet:'' };
+  CUR = 1; MAX = 1;
+  goToStep(1);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('screen-login').style.display !== 'none') login();
+});
+
+sb.auth.getSession().then(({ data: { session } }) => { if (session) showApp(); });
+
+// ── POSITIONS ──
+const POSITIONS = {
+  soccer:     ['Portero','Defensa Central','Lateral Derecho','Lateral Izquierdo','Mediocampista Defensivo','Mediocampista Box-to-Box','Extremo Derecho','Extremo Izquierdo','Delantero Centro'],
+  basketball: ['Base (PG)','Escolta (SG)','Alero (SF)','Ala-Pívot (PF)','Pívot (C)'],
+  baseball:   ['Pitcher','Cátcher','Primera Base','Segunda Base','Tercera Base','Shortstop','Jardinero Izquierdo','Jardinero Central','Jardinero Derecho','Designado (DH)'],
+  volleyball: ['Líbero','Colocador','Central','Opuesto','Receptor-Atacante'],
+  track:      ['Velocidad (100/200m)','400m','Medio Fondo (800/1500m)','Fondo (3000m+)','Vallas','Lanzamientos','Saltos'],
+  swimming:   ['Libre (Sprint)','Libre (Fondo)','Mariposa','Espalda','Pecho','Combinado Individual'],
+  tennis:     ['Jugador Base (Fondo)','Serve & Volley','All-Court'],
+  football:   ['Quarterback','Running Back','Wide Receiver','Tight End','Liniero Ofensivo','Liniero Defensivo','Linebacker','Cornerback','Safety','Kicker/Punter']
+};
+const SPORT_NAMES = { soccer:'Fútbol', basketball:'Baloncesto', baseball:'Béisbol', volleyball:'Voleibol', track:'Atletismo', swimming:'Natación', tennis:'Tenis', football:'Fútbol Americano' };
+
+function updatePositions() {
+  const sport = document.getElementById('f-sport').value;
+  const sel   = document.getElementById('f-position');
+  sel.innerHTML = '<option value="">Seleccionar</option>';
+  (POSITIONS[sport] || []).forEach(p => {
+    const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o);
+  });
+}
+
+// ── STEP NAVIGATION ──
+function tryGoStep(n) { if (n <= MAX) goToStep(n); }
+
+function goToStep(n) {
+  document.querySelectorAll('.step').forEach((s, i) => s.classList.toggle('active', i + 1 === n));
+  document.querySelectorAll('.pstep').forEach((p, i) => {
+    p.classList.remove('active', 'done', 'clickable');
+    if (i + 1 < n) { p.classList.add('done'); if (i + 1 <= MAX) p.classList.add('clickable'); }
+    if (i + 1 === n) p.classList.add('active');
+    if (i + 1 > n && i + 1 <= MAX) p.classList.add('clickable');
+  });
+  CUR = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── STEP 1 ──
+function nextStep1() {
+  const ids = ['f-name','f-age','f-gender','f-weight','f-height','f-bf','f-sport','f-position'];
+  const vals = ids.map(id => document.getElementById(id).value.trim());
+  if (vals.some(v => !v)) { show('s1-err'); return; }
+  hide('s1-err');
+  PROFILE = {
+    name: vals[0], age: +vals[1], gender: vals[2],
+    weight: +vals[3], height: +vals[4], bodyFat: +vals[5],
+    sport: vals[6], position: vals[7]
+  };
+  renderBenchmarks();
+  MAX = Math.max(MAX, 2);
+  goToStep(2);
+}
+
+// ── BENCHMARKS ──
+const BENCH = {
+  soccer:     { male: { bf: {elite:8,  d1:10, d2:13} }, female: { bf: {elite:14, d1:17, d2:20} } },
+  basketball: { male: { bf: {elite:7,  d1:9,  d2:12} }, female: { bf: {elite:14, d1:17, d2:21} } },
+  baseball:   { male: { bf: {elite:10, d1:13, d2:16} }, female: { bf: {elite:16, d1:19, d2:22} } },
+  volleyball: { male: { bf: {elite:9,  d1:12, d2:15} }, female: { bf: {elite:13, d1:16, d2:19} } },
+  track:      { male: { bf: {elite:7,  d1:10, d2:13} }, female: { bf: {elite:12, d1:15, d2:18} } },
+  swimming:   { male: { bf: {elite:8,  d1:11, d2:14} }, female: { bf: {elite:14, d1:17, d2:20} } },
+  tennis:     { male: { bf: {elite:10, d1:13, d2:16} }, female: { bf: {elite:16, d1:19, d2:22} } },
+  football:   { male: { bf: {elite:11, d1:14, d2:17} }, female: { bf: {elite:16, d1:19, d2:22} } }
+};
+
+function bfRating(val, b) {
+  if (val <= b.elite) return 'elite';
+  if (val <= b.d1)    return 'd1';
+  if (val <= b.d2)    return 'd2';
+  return 'below';
+}
+
+function ratingBadge(r) {
+  const map = { elite: ['badge-elite','Nivel Élite ✓'], d1: ['badge-d1','Nivel NCAA D1'], d2: ['badge-d2','Nivel NCAA D2'], below: ['badge-below','Por Mejorar'] };
+  return `<span class="badge ${map[r][0]}">${map[r][1]}</span>`;
+}
+
+function barHTML(pct, e, d1, d2) {
+  return `
+    <div class="bar-track">
+      <div class="bar-fill" style="width:${Math.min(pct,100)}%"></div>
+      <div class="bar-dot" style="left:${Math.min(pct,100)}%"></div>
+    </div>
+    <div class="bar-labels">
+      <div class="bar-lbl" style="left:${e}%">Élite</div>
+      <div class="bar-lbl" style="left:${d1}%">D1</div>
+      <div class="bar-lbl" style="left:${d2}%">D2</div>
+    </div>`;
+}
+
+function renderBenchmarks() {
+  const { gender, weight, height, bodyFat, sport, position } = PROFILE;
+  const g = gender === 'male' ? 'male' : 'female';
+  const bData = (BENCH[sport] || BENCH.soccer)[g];
+  const bf = bodyFat;
+  const bmi = +(weight / Math.pow(height / 100, 2)).toFixed(1);
+  const leanKg = +(weight * (1 - bf / 100)).toFixed(1);
+  const fatKg = +(weight * bf / 100).toFixed(1);
+
+  const BF_MAX = 35;
+  const bfPct  = (bf / BF_MAX) * 100;
+  const ePct   = (bData.bf.elite / BF_MAX) * 100;
+  const d1Pct  = (bData.bf.d1 / BF_MAX) * 100;
+  const d2Pct  = (bData.bf.d2 / BF_MAX) * 100;
+  const bfR    = bfRating(bf, bData.bf);
+
+  // BMI — use range mid
+  const bmiTgt = gender === 'male' ? {elite:22.5,d1:23.5,d2:24.5} : {elite:21.0,d1:22.0,d2:23.5};
+  const BMI_MAX = 32;
+  const bmiPct = (bmi / BMI_MAX) * 100;
+  const bmiDiff = (v) => Math.abs(bmi - v);
+  const bmiR = bmiDiff(bmiTgt.elite) <= 1.5 ? 'elite' : bmiDiff(bmiTgt.d1) <= 1.5 ? 'd1' : bmiDiff(bmiTgt.d2) <= 1.5 ? 'd2' : 'below';
+
+  document.getElementById('bench-content').innerHTML = `
+    <div class="bcard">
+      <div class="bcard-title">${SPORT_NAMES[sport] || sport} · ${position}</div>
+
+      <div class="bstat">
+        <div class="bstat-row">
+          <span class="bstat-name">% Grasa Corporal</span>
+          <span class="bstat-you">${bf}%</span>
+        </div>
+        ${barHTML(bfPct, ePct.toFixed(1), d1Pct.toFixed(1), d2Pct.toFixed(1))}
+        <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+          Referencia: Élite ≤${bData.bf.elite}% · NCAA D1 ≤${bData.bf.d1}% · NCAA D2 ≤${bData.bf.d2}%
+        </div>
+        ${ratingBadge(bfR)}
+      </div>
+
+      <div class="bstat" style="margin-top:20px">
+        <div class="bstat-row">
+          <span class="bstat-name">Índice de Masa Corporal (BMI)</span>
+          <span class="bstat-you">${bmi}</span>
+        </div>
+        ${barHTML(bmiPct, ((bmiTgt.elite/BMI_MAX)*100).toFixed(1), ((bmiTgt.d1/BMI_MAX)*100).toFixed(1), ((bmiTgt.d2/BMI_MAX)*100).toFixed(1))}
+        <div style="margin-top:6px;font-size:11px;color:var(--muted)">
+          Rango ideal para tu deporte: ${bmiTgt.elite - 1.5}–${bmiTgt.d2 + 1.5} (varía por posición)
+        </div>
+        ${ratingBadge(bmiR)}
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-val">${weight} kg</div>
+          <div class="stat-lbl">Peso total</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val green">${leanKg} kg</div>
+          <div class="stat-lbl">Masa magra</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${fatKg} kg</div>
+          <div class="stat-lbl">Masa grasa</div>
+        </div>
+      </div>
+    </div>
+    <div class="plan-note">
+      <strong style="color:var(--text)">Nota:</strong> Los benchmarks son promedios documentados de atletas universitarios y de élite.
+      La composición ideal varía por posición específica, fase de temporada y genética individual.
+    </div>`;
+}
+
+// ── STEP 3 ──
+function selOpt(q, el) {
+  document.querySelectorAll(`#q-${q} .qopt`).forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  ANS[q] = el.dataset.val;
+}
+
+function nextStep3() {
+  if (!ANS.gym || !ANS.goal || !ANS.days || !ANS.diet) { show('s3-err'); return; }
+  hide('s3-err');
+  generatePlan();
+  MAX = 4;
+  goToStep(4);
+}
+
+// ── PLAN GENERATION ──
+function generatePlan() {
+  const { name, age, gender, weight, height } = PROFILE;
+  const { gym, goal, days, diet } = ANS;
+  const d = parseInt(days);
+
+  // BMR — Mifflin-St Jeor
+  const bmr = gender === 'male'
+    ? 10 * weight + 6.25 * height - 5 * age + 5
+    : 10 * weight + 6.25 * height - 5 * age - 161;
+
+  const actFactor = d >= 6 ? 1.725 : d >= 5 ? 1.65 : d >= 4 ? 1.6 : 1.55;
+  const tdee = Math.round(bmr * actFactor);
+  const calAdj = { performance: 200, muscle: 350, fat: -300, maintain: 0 };
+  const cal = tdee + calAdj[goal];
+
+  const protG = { muscle: 2.0, fat: 1.8, performance: 1.9, maintain: 1.6 };
+  const protein = Math.round(weight * protG[goal]);
+  const fatG    = Math.round(cal * 0.28 / 9);
+  const carbs   = Math.round((cal - protein * 4 - fatG * 9) / 4);
+
+  const goalLabels = { performance:'Rendimiento Deportivo', muscle:'Ganancia Muscular', fat:'Pérdida de Grasa', maintain:'Mantenimiento' };
+  const gymLabels  = { yes:'Gimnasio completo con pesas', partial:'Equipamiento básico', no:'Sin equipamiento (calistenia)' };
+
+  document.getElementById('plan-title').textContent = `Plan de ${name}`;
+
+  document.getElementById('plan-content').innerHTML = `
+    <div class="psection">
+      <div class="psec-title">🥗 Plan Nutricional</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">
+        Objetivo: <strong style="color:var(--text)">${goalLabels[goal]}</strong> &nbsp;·&nbsp; ${d} días de entrenamiento/semana
+      </div>
+
+      <div class="cal-hero">
+        <div class="cal-num">${cal.toLocaleString()}</div>
+        <div class="cal-lbl">Calorías diarias recomendadas</div>
+      </div>
+
+      <div class="macros-row">
+        <div class="mcard">
+          <div class="mcard-val">${protein}g</div>
+          <div class="mcard-pct">${Math.round(protein*4/cal*100)}% de las calorías</div>
+          <div class="mcard-lbl">Proteínas</div>
+        </div>
+        <div class="mcard">
+          <div class="mcard-val">${carbs}g</div>
+          <div class="mcard-pct">${Math.round(carbs*4/cal*100)}% de las calorías</div>
+          <div class="mcard-lbl">Carbohidratos</div>
+        </div>
+        <div class="mcard">
+          <div class="mcard-val">${fatG}g</div>
+          <div class="mcard-pct">${Math.round(fatG*9/cal*100)}% de las calorías</div>
+          <div class="mcard-lbl">Grasas</div>
+        </div>
+      </div>
+
+      <div class="meals-lbl">Ejemplo de día alimenticio</div>
+      ${buildMeals(diet, goal)}
+    </div>
+
+    <div class="psection">
+      <div class="psec-title">💪 Plan de Entrenamiento</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px">${gymLabels[gym]} &nbsp;·&nbsp; ${d} días/semana</div>
+      ${buildTraining(gym, goal, d)}
+    </div>
+
+    <div class="plan-note">
+      Este plan es una guía personalizada basada en tus datos. Para ajustes específicos,
+      consulta con tu nutricionista y preparador físico asignado en NVS.
+    </div>`;
+}
+
+function buildMeals(diet, goal) {
+  const isVegan = diet === 'vegan';
+  const isVeg   = diet === 'veg' || isVegan;
+  const isFat   = goal === 'fat';
+
+  const plans = {
+    vegan: [
+      {t:'7:00 am',  f:'Avena con leche de avena, plátano en rodajas y semillas de chía',       m:'~550 kcal · P 18g · C 85g'},
+      {t:'10:00 am', f:'Smoothie de proteína vegana con espinaca, mango y linaza molida',        m:'~310 kcal · P 28g · C 40g'},
+      {t:'1:00 pm',  f:'Bowl de arroz integral, tofu salteado con soya, aguacate y ensalada',    m:'~620 kcal · P 32g · C 70g'},
+      {t:'4:00 pm',  f:'Hummus con pan pita integral, zanahoria y pepino',                       m:'~280 kcal · P 10g · C 38g'},
+      {t:'7:00 pm',  f:'Lentejas estofadas con quinoa, vegetales asados y aceite de oliva',      m:'~580 kcal · P 28g · C 72g'},
+    ],
+    veg: [
+      {t:'7:00 am',  f:'Omelette 3 huevos con espinaca y queso, 2 tostadas integrales',         m:'~520 kcal · P 32g · C 46g'},
+      {t:'10:00 am', f:'Yogur griego con granola, miel y frutos rojos',                          m:'~340 kcal · P 22g · C 44g'},
+      {t:'1:00 pm',  f:'Bowl de arroz integral, garbanzos salteados y aguacate',                 m:'~650 kcal · P 26g · C 80g'},
+      {t:'4:00 pm',  f:'Batido de proteína con leche + manzana y 15 almendras',                  m:'~310 kcal · P 30g · C 30g'},
+      {t:'7:00 pm',  f:'Pasta integral con ricotta, tomate natural y ensalada verde',            m:'~580 kcal · P 24g · C 74g'},
+    ],
+    fat: [
+      {t:'7:00 am',  f:'4 claras de huevo + 1 entero revueltos con vegetales, 1 tostada',       m:'~320 kcal · P 30g · C 26g'},
+      {t:'10:00 am', f:'Pechuga de pollo 150g a la plancha con ensalada verde y aceite',        m:'~280 kcal · P 36g · C 8g'},
+      {t:'1:00 pm',  f:'Arroz integral ½ taza, pechuga de pavo 180g y brócoli al vapor',        m:'~480 kcal · P 44g · C 48g'},
+      {t:'4:00 pm',  f:'Batido de proteína con agua y 10 almendras',                             m:'~230 kcal · P 28g · C 10g'},
+      {t:'7:00 pm',  f:'Salmón al horno 180g, espárragos y ½ papa dulce',                       m:'~460 kcal · P 38g · C 32g'},
+    ],
+    default: [
+      {t:'7:00 am',  f:'Avena con leche, plátano, 1 cda. mantequilla de maní, 2 huevos',       m:'~620 kcal · P 34g · C 74g'},
+      {t:'10:00 am', f:'Arroz 1 taza, pollo a la plancha 150g y aguacate',                      m:'~480 kcal · P 40g · C 50g'},
+      {t:'1:00 pm',  f:'Pasta integral 80g, atún 1 lata, tomate y aceite de oliva',             m:'~570 kcal · P 38g · C 66g'},
+      {t:'4:00 pm',  f:'Batido de proteína con leche, avena y plátano (pre-entreno)',           m:'~420 kcal · P 32g · C 54g'},
+      {t:'7:00 pm',  f:'Carne magra 180g a la plancha, arroz integral y ensalada',              m:'~540 kcal · P 44g · C 48g'},
+    ]
+  };
+
+  const chosen = isVegan ? plans.vegan : isVeg ? plans.veg : isFat ? plans.fat : plans.default;
+  return chosen.map(m => `
+    <div class="mrow">
+      <div class="mtime">${m.t}</div>
+      <div class="mfood">${m.f}</div>
+      <div class="mmacros">${m.m}</div>
+    </div>`).join('');
+}
+
+function buildTraining(gym, goal, days) {
+  const hasGym = gym !== 'no';
+
+  const splits = hasGym ? gymPlan(goal, days) : bwPlan(goal, days);
+
+  const ALL_DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+  const used = splits.length;
+  const restDays = ALL_DAYS.slice(used);
+
+  let html = splits.map(d => `
+    <div class="tday">
+      <div class="tday-lbl">${d.label}</div>
+      <div class="tday-focus">${d.focus}</div>
+      <div class="tday-ex">${d.ex}</div>
+    </div>`).join('');
+
+  if (restDays.length > 0) {
+    html += `<div class="tday rest-day">
+      <div class="tday-lbl">${restDays.join(' · ')}</div>
+      <div class="tday-focus" style="color:var(--muted)">Descanso activo</div>
+      <div class="tday-ex">Caminata o stretching suave 20–30 min · Movilidad articular</div>
+    </div>`;
+  }
+  return html;
+}
+
+function gymPlan(goal, days) {
+  const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  if (days === 3) return [
+    {label:`Día 1 · ${DAYS[0]}`, focus:'Full Body A — Fuerza Base',     ex:'Sentadilla con barra 4×6 · Press de banca 4×8 · Peso muerto rumano 3×10 · Press militar 3×10 · Curl bíceps 3×12 · Plancha 3×45s'},
+    {label:`Día 2 · ${DAYS[2]}`, focus:'Full Body B — Hipertrofia',     ex:'Prensa de piernas 4×12 · Remo con barra 4×8 · Fondos 3×10 · Hip thrust 3×12 · Press inclinado 3×10 · HIIT bicicleta 12 min'},
+    {label:`Día 3 · ${DAYS[4]}`, focus:'Full Body C — Explosividad',    ex:'Peso muerto 4×5 · Dominadas 4×max · Step-ups con mancuernas 3×12 · Press Arnold 3×10 · Saltos al cajón 4×6 · Ab wheel 3×12'},
+  ];
+  if (days === 4) return [
+    {label:`Día 1 · ${DAYS[0]}`, focus:'Tren Superior A',   ex:'Press de banca 4×8 · Remo con barra 4×8 · Press militar 3×10 · Dominadas 3×max · Curl bíceps 3×12 · Extensión tríceps 3×15'},
+    {label:`Día 2 · ${DAYS[1]}`, focus:'Tren Inferior A',   ex:'Sentadilla trasera 4×8 · Prensa 3×12 · Extensión cuádriceps 3×15 · Curl femoral 3×12 · Pantorrillas 4×15 · Plancha lateral 3×30s c/lado'},
+    {label:`Día 3 · ${DAYS[3]}`, focus:'Tren Superior B',   ex:'Press inclinado 4×10 · Remo en polea 4×10 · Press Arnold 3×12 · Jalón al pecho 3×12 · Vuelos 3×15 · Face pull 3×15'},
+    {label:`Día 4 · ${DAYS[4]}`, focus:'Tren Inferior B + Core', ex:'Peso muerto 4×6 · Hip thrust 4×10 · Zancadas 3×12 c/lado · Curl femoral 3×12 · Ab wheel 3×12 · Crunches con peso 3×15'},
+  ];
+  // 5–6 días: Push / Pull / Legs
+  const base = [
+    {label:`Día 1 · ${DAYS[0]}`, focus:'Push — Pecho, Hombros, Tríceps',    ex:'Press banca 4×8 · Press inclinado 3×10 · Press militar 3×10 · Vuelos 3×15 · Fondos 3×max · Press francés 3×12'},
+    {label:`Día 2 · ${DAYS[1]}`, focus:'Pull — Espalda, Bíceps',            ex:'Peso muerto 4×6 · Dominadas 4×max · Remo barra 3×8 · Jalón al pecho 3×12 · Curl martillo 3×12 · Remo polea alta 3×15'},
+    {label:`Día 3 · ${DAYS[2]}`, focus:'Legs — Cuádriceps, Femoral, Glúteo',ex:'Sentadilla 4×8 · Prensa 3×12 · Hip thrust 4×10 · Extensión cuáds 3×15 · Curl femoral 3×12 · Pantorrillas 4×15'},
+    {label:`Día 4 · ${DAYS[3]}`, focus:'Push B + Cardio',                   ex:'Press inclinado mancuernas 4×10 · Arnold press 3×12 · Cruces polea 3×15 · Extensión tríceps 3×15 · HIIT 20 min'},
+    {label:`Día 5 · ${DAYS[4]}`, focus:'Pull B + Movilidad',                ex:'Remo sentado polea 4×12 · Face pull 3×15 · Curl concentrado 3×12 · Jalón polea baja 3×12 · Movilidad 15 min'},
+  ];
+  if (days >= 6) base.push({label:`Día 6 · ${DAYS[5]}`, focus:'Legs B + Agilidad Deportiva', ex:'Step-ups con barra 3×10 · Sentadilla búlgara 3×10 c/lado · RDL mancuernas 3×12 · Saltos cajón 4×6 · Agilidad y cambios de dirección 20 min'});
+  return base;
+}
+
+function bwPlan(goal, days) {
+  const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  if (days === 3) return [
+    {label:`Día 1 · ${DAYS[0]}`, focus:'Full Body A',           ex:'Sentadillas 4×20 · Flexiones 4×max · Zancadas 3×12 c/lado · Fondos en silla 3×15 · Plancha 3×45s · Saltos verticales 3×10'},
+    {label:`Día 2 · ${DAYS[2]}`, focus:'Full Body B + HIIT',    ex:'Burpees 4×10 · Pike push-ups 3×12 · Sentadilla sumo 3×20 · Mountain climbers 3×30s · Superman 3×12 · HIIT 15 min'},
+    {label:`Día 3 · ${DAYS[4]}`, focus:'Full Body C + Core',    ex:'Pistol squat asistido 3×6 c/lado · Push-ups diamante 3×12 · Hip thrust sin peso 4×20 · Ab wheel 3×10 · Plancha lateral 3×30s · Stretching 15 min'},
+  ];
+  const base = [
+    {label:`Día 1 · ${DAYS[0]}`, focus:'Tren Superior',    ex:'Flexiones 4×max · Fondos en silla 3×15 · Pike push-ups 3×10 · Remo invertido 3×10 · Curl con mochila 3×15 · Plancha 3×45s'},
+    {label:`Día 2 · ${DAYS[1]}`, focus:'Tren Inferior',    ex:'Sentadillas 4×20 · Zancadas 3×12 c/lado · Puente de glúteos 4×20 · Sentadilla sumo 3×20 · Pantorrillas 4×20 · Saltos 3×10'},
+    {label:`Día 3 · ${DAYS[2]}`, focus:'Cardio + Core',    ex:'HIIT 25 min (30s trabajo / 15s pausa) · Ab wheel 3×12 · Crunches bicicleta 3×20 · Russian twist 3×20 · Plancha lateral 3×30s c/lado'},
+    {label:`Día 4 · ${DAYS[3]}`, focus:'Full Body Explosivo', ex:'Burpees 4×10 · Saltos verticales 3×8 · Flexiones explosivas 3×10 · Mountain climbers 3×30s · Sentadilla jump 3×15 · Sprints 8×20m'},
+    {label:`Día 5 · ${DAYS[4]}`, focus:'Fuerza + Movilidad',  ex:'Pistol squat progresión 3×6 c/lado · Fondos paralelas 3×12 · Plancha extensiones 3×10 · Hip thrust 3×20 · Movilidad y stretching 20 min'},
+  ];
+  if (days >= 6) base.push({label:`Día 6 · ${DAYS[5]}`, focus:'Agilidad Deportiva', ex:'Cambios de dirección 4×30s · Salto al cajón (si disponible) 4×8 · Escalera de agilidad 6 series · Sprint progresivo 10×20m · Enfriamiento 15 min'});
+  return base.slice(0, days);
+}
+
+// ── PDF ──
+function downloadPDF() {
+  const { name, sport, position } = PROFILE;
+  const sName = SPORT_NAMES[sport] || sport;
+  const benchHTML = document.getElementById('bench-content').innerHTML;
+  const planHTML  = document.getElementById('plan-content').innerHTML;
+  const date = new Date().toLocaleDateString('es-PA', {day:'numeric',month:'long',year:'numeric'});
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8"><title>NVS Plan — ${name}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Anton&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080c;--surface:#10121a;--surface2:#181c28;--border:#252a3a;--text:#e8eaf2;--muted:#6b7280;--green:#AAFF00;--green-dk:#88cc00;--green-dim:rgba(170,255,0,0.08);--green-dim2:rgba(170,255,0,0.15);--blue:#4a9eff;--red:#ff4f4f;--orange:#f59e0b;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);padding:36px;max-width:800px;margin:0 auto;}
+.logo{font-family:'Anton',sans-serif;font-size:30px;color:var(--green);letter-spacing:2px;}
+.sub{color:var(--muted);font-size:13px;margin-top:3px;margin-bottom:6px;}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.bcard,.psection{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px;}
+.bcard-title,.psec-title,.meals-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:16px;}
+.psec-title{font-family:'Anton',sans-serif;font-size:20px;color:var(--green);letter-spacing:.5px;}
+.bstat{margin-bottom:20px;} .bstat-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;} .bstat-name{font-size:14px;font-weight:600;color:var(--text);} .bstat-you{font-size:18px;font-weight:800;color:var(--green);}
+.bar-track{position:relative;height:6px;background:var(--surface2);border-radius:3px;overflow:visible;margin-bottom:8px;} .bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,rgba(74,158,255,.3),#4a9eff);} .bar-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid var(--bg);}
+.bar-labels{position:relative;height:26px;} .bar-lbl{position:absolute;transform:translateX(-50%);font-size:9px;color:var(--muted);text-align:center;line-height:1.3;} .bar-lbl::before{content:'';display:block;width:1px;height:5px;background:var(--border);margin:0 auto 2px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
+.badge-elite{background:var(--green-dim2);color:var(--green);} .badge-d1{background:rgba(74,158,255,.12);color:var(--blue);} .badge-d2{background:rgba(245,158,11,.12);color:var(--orange);} .badge-below{background:rgba(255,79,79,.1);color:var(--red);}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-top:14px;border-top:1px solid var(--border);margin-top:4px;} .stat-box{background:var(--surface2);border-radius:8px;padding:12px;text-align:center;} .stat-val{font-family:'Anton',sans-serif;font-size:22px;color:var(--text);} .stat-val.green{color:var(--green);} .stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:3px;}
+.cal-hero{text-align:center;background:var(--green-dim);border:1px solid rgba(170,255,0,.25);border-radius:10px;padding:18px;margin-bottom:14px;} .cal-num{font-family:'Anton',sans-serif;font-size:46px;color:var(--green);line-height:1;} .cal-lbl{color:var(--muted);font-size:11px;margin-top:3px;text-transform:uppercase;letter-spacing:.5px;}
+.macros-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;} .mcard{background:var(--surface2);border-radius:10px;padding:12px;text-align:center;} .mcard-val{font-family:'Anton',sans-serif;font-size:26px;color:var(--green);} .mcard-pct{font-size:10px;color:var(--muted);margin-top:2px;} .mcard-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:3px;}
+.mrow{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);} .mrow:last-child{border-bottom:none;} .mtime{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);width:65px;flex-shrink:0;padding-top:2px;} .mfood{font-size:12px;color:var(--text);flex:1;line-height:1.4;} .mmacros{font-size:10px;color:var(--muted);white-space:nowrap;padding-top:2px;}
+.tday{padding:10px 0;border-bottom:1px solid var(--border);} .tday:last-child{border-bottom:none;} .tday-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:3px;} .tday-focus{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;} .tday-ex{font-size:12px;color:var(--muted);line-height:1.6;}
+.plan-note{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px;}
+.print-btn{position:fixed;bottom:20px;right:20px;background:var(--green);color:#0a0f00;border:none;border-radius:8px;padding:11px 22px;font-size:13px;font-weight:800;font-family:'Inter',sans-serif;cursor:pointer;letter-spacing:.2px;}
+@media print{.print-btn{display:none;}body{padding:14px;}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style></head><body>
+<div class="logo">NVS</div>
+<div class="sub">Athlete Performance · ${name} · ${sName} / ${position} · Generado: ${date}</div>
+<hr class="divider">
+<div style="margin-bottom:20px">${benchHTML}</div>
+${planHTML}
+<button class="print-btn" onclick="window.print()">⬇ Guardar PDF</button>
+</body></html>`);
+  w.document.close();
+}
+
+// ── HELPERS ──
+function show(id) { document.getElementById(id).style.display = 'block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+</body>
+</html>
