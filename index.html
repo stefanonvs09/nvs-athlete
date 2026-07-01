@@ -364,7 +364,7 @@
       <div id="bench-content"></div>
       <div class="step-nav">
         <button class="btn-s" onclick="tryGoStep(1)">← Atrás</button>
-        <button class="btn-p" onclick="advanceToStep3()">Continuar →</button>
+        <button class="btn-p" onclick="toStep3()">Continuar →</button>
       </div>
     </div>
 
@@ -518,11 +518,17 @@ function goToStep(n) {
 function nextStep1() {
   const ids = ['f-name','f-age','f-gender','f-weight','f-height','f-bf','f-sport','f-position'];
   const vals = ids.map(id => document.getElementById(id).value.trim());
-  if (vals.some(v => !v)) { show('s1-err'); return; }
+  if (vals.some(v => !v)) { show('s1-err'); document.getElementById('s1-err').textContent = 'Por favor completa todos los campos.'; return; }
+  const bodyFat = +vals[5];
+  if (isNaN(bodyFat) || bodyFat < 3 || bodyFat > 50) {
+    show('s1-err');
+    document.getElementById('s1-err').textContent = '% de grasa corporal debe estar entre 3% y 50%';
+    return;
+  }
   hide('s1-err');
   PROFILE = {
     name: vals[0], age: +vals[1], gender: vals[2],
-    weight: +vals[3], height: +vals[4], bodyFat: +vals[5],
+    weight: +vals[3], height: +vals[4], bodyFat: bodyFat,
     sport: vals[6], position: vals[7]
   };
   renderBenchmarks();
@@ -573,8 +579,8 @@ function renderBenchmarks() {
   const bData = (BENCH[sport] || BENCH.soccer)[g];
   const bf = bodyFat;
   const bmi = +(weight / Math.pow(height / 100, 2)).toFixed(1);
-  const leanKg = +(weight * (1 - bf / 100)).toFixed(1);
-  const fatKg = +(weight * bf / 100).toFixed(1);
+  const leanKg = +(Math.max(0, weight * (1 - bf / 100))).toFixed(1);
+  const fatKg = +(Math.min(weight, weight * bf / 100)).toFixed(1);
 
   const BF_MAX = 35;
   const bfPct  = (bf / BF_MAX) * 100;
@@ -647,6 +653,7 @@ function selOpt(q, el) {
 }
 
 function advanceToStep3() { MAX = Math.max(MAX, 3); goToStep(3); }
+function toStep3() { MAX = Math.max(MAX, 3); goToStep(3); }
 
 function nextStep3() {
   if (!ANS.gym || !ANS.goal || !ANS.days || !ANS.diet) { show('s3-err'); return; }
