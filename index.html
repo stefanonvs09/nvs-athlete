@@ -364,7 +364,7 @@
       <div id="bench-content"></div>
       <div class="step-nav">
         <button class="btn-s" onclick="tryGoStep(1)">← Atrás</button>
-        <button class="btn-p" onclick="tryGoStep(3)">Continuar →</button>
+        <button class="btn-p" onclick="advanceToStep3()">Continuar →</button>
       </div>
     </div>
 
@@ -645,6 +645,8 @@ function selOpt(q, el) {
   el.classList.add('sel');
   ANS[q] = el.dataset.val;
 }
+
+function advanceToStep3() { MAX = Math.max(MAX, 3); goToStep(3); }
 
 function nextStep3() {
   if (!ANS.gym || !ANS.goal || !ANS.days || !ANS.diet) { show('s3-err'); return; }
